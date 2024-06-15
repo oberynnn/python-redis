@@ -22,6 +22,24 @@ class protocol_handler(object):
         }
 
     def handle_request(self, socket_file):
+        first_byte = socket_file.read(1)
+        if not first_byte:
+            raise disconnect()
+        try:
+            return self.handlers[first_byte](socket_file)
+        except KeyError:
+            raise command_error('bad request')
+        
+    def handle_simple_string(self, socket_file):
+        return socket_file.readline().rstrip('\r\n')
+    
+    def handle_error(self, socket_file):
+        return Error(socket_file.readline().rstrip('\r\n'))
+    
+    def handle_integer(self, socket_file):
+        return int(socket_file.readline().rstrip('\r\n'))
+    
+    def handle_string(self, socket_file):
         pass
     
     def write_respones(self, socket_file, data):
