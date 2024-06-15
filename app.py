@@ -11,6 +11,16 @@ class disconnect(Exception): pass
 Error = namedtuple('error', ('message', ))
 
 class protocol_handler(object):
+    def __init__(self):
+        self.handlers = {
+            '+': self.handle_simple_string,
+            '-': self.handle_error,
+            ':': self.handle_integer,
+            '$': self.handle_string,
+            '*': self.handle_array,
+            '%': self.handle_dict
+        }
+
     def handle_request(self, socket_file):
         pass
     
@@ -35,3 +45,9 @@ class server(object):
                 response = self.get_response(data)
             except command_error as exc:
                 response = Error(exc.args[0])
+    
+    def get_response(self, data):
+        pass
+
+    def run(self):
+        self.__server.serve_forever()
