@@ -8,7 +8,7 @@ from socket import error as sock_error
 class command_error(Exception): pass
 class disconnect(Exception): pass
 
-Error = namedtuple('error', ('message', ))
+Error = namedtuple('error', ('message',))
 
 class protocol_handler(object):
     def __init__(self):
@@ -65,8 +65,13 @@ class protocol_handler(object):
     def __write(self, buffer, data):
         if isinstance(data, str):
             data = data.encode('utf-8')
+
         if isinstance(data, bytes):
             buffer.write('$%s\r\n%s\r\n' % (len(data), data))
+        elif isinstance(data, int):
+            buffer.write(':$%s\r\n' % data)
+        elif isinstance(data, Error):
+            buffer.write('-$%s\r\n' % data.message)
 
 class server(object):
     def __init__(self, host='127.0.0.1', port=31337, max_clients=64):
