@@ -40,10 +40,33 @@ class protocol_handler(object):
         return int(socket_file.readline().rstrip('\r\n'))
     
     def handle_string(self, socket_file):
-        pass
+        length = int(socket_file.readline().rstrip('\r\n'))
+        if length == -1:
+            return None
+        length += 2
+        return socket_file.read(length)[:-2]
+    
+    def handle_array(self, socket_file):
+        num_elements = int(socket_file.readline().rstrip('\r\n'))
+        return [self.handle_request(socket_file) for _ in range(num_elements)]
+    
+    def handle_dict(self, socket_file):
+        num_items = int(socket_file.readline().rstrip('\r\n'))
+        elements = [self.handle_request(socket_file) for _ in range(num_items * 2)]
+        return dict(zip(elements[::2], elements[1::2]))
     
     def write_respones(self, socket_file, data):
-        pass
+        buffer = BytesIO()
+        self.__write(buffer, data)
+        buffer.seek(0)
+        socket_file.write(buffer.getvalue())
+        socket_file.flush()
+
+    def __write(self, buffer, data):
+        if isinstance(data, str):
+            data = data.encode('utf-8')
+        if isinstance(data, bytes):
+            buffer.write('$%s\r\n%s\r\n' % (len(data), data))
 
 class server(object):
     def __init__(self, host='127.0.0.1', port=31337, max_clients=64):
