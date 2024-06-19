@@ -72,6 +72,19 @@ class protocol_handler(object):
             buffer.write(':$%s\r\n' % data)
         elif isinstance(data, Error):
             buffer.write('-$%s\r\n' % data.message)
+        elif isinstance(data, (list, tuple)):
+            buffer.write('*$%s\r\n' % len(data))
+            for item in data:
+                self.__write(buffer, item)
+        elif isinstance(data, dict):
+            buffer.write('%$%s\r\n' % len(data))
+            for key in data:
+                self.__write(buffer, key)
+                self.__write(buffer, data[key])
+        elif data == None:
+            buffer.write('$-1\r\n')
+        else:
+            raise command_error('unrecognized data type - %s' % type(data))
 
 class server(object):
     def __init__(self, host='127.0.0.1', port=31337, max_clients=64):
