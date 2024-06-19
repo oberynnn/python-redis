@@ -92,6 +92,7 @@ class server(object):
         self.__server = StreamServer((host, port), self.connection_handler, spawn=self.__pool)
         self.__protocol = protocol_handler()
         self.__kv = {}
+        self.__commands = self.get_commands()
     
     def connection_handler(self, connection, address):
         socket_file = connection.makefile('rwb')
@@ -105,8 +106,28 @@ class server(object):
             except command_error as exc:
                 response = Error(exc.args[0])
     
+    def get_commands(self):
+        return {
+            'GET' : self.get,
+            'SET' : self.set,
+            'DELETE' : self.delete,
+            'FLUSH' : self.flush,
+            'MGET' : self.mget,
+            'MSET' : self.mset
+        }
+    
     def get_response(self, data):
-        pass
+        if not isinstance(data, list):
+            try:
+                data = data.split()
+            except:
+                raise command_error('request must be a list or simple string')
+        if not data:
+            raise command_error('command cannot be blank')
+        command = data[0].upper()
+        if command not in self.__commands:
+            raise command_error('unrecognized command - %s' % command)
+        return self.__commands[command](*data[1:])
 
     def run(self):
         self.__server.serve_forever()
