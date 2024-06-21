@@ -128,6 +128,33 @@ class server(object):
         if command not in self.__commands:
             raise command_error('unrecognized command - %s' % command)
         return self.__commands[command](*data[1:])
+    
+    def get(self, key):
+        return self.__kv.get(key)
+    
+    def set(self, key, value):
+        self.__kv[key] = value
+        return 1
+
+    def delete(self, key):
+        if key in self.__kv:
+            del self.__kv[key]
+            return 1
+        return 0
+    
+    def flush(self):
+        kv_len = len(self.__kv)
+        self.__kv.clear()
+        return kv_len
+    
+    def mget(self, *keys):
+        return [self.__kv.get(key) for key in keys]
+    
+    def mset(self, *items):
+        data = zip(items[::2], items[1::2])
+        for key, value in data:
+            self.__kv[key] = value
+        return len(data)
 
     def run(self):
         self.__server.serve_forever()
