@@ -55,7 +55,7 @@ class protocol_handler(object):
         elements = [self.handle_request(socket_file) for _ in range(num_items * 2)]
         return dict(zip(elements[::2], elements[1::2]))
     
-    def write_respones(self, socket_file, data):
+    def write_response(self, socket_file, data):
         buffer = BytesIO()
         self.__write(buffer, data)
         buffer.seek(0)
@@ -158,3 +158,40 @@ class server(object):
 
     def run(self):
         self.__server.serve_forever()
+
+class client(object):
+    def __init__(self, host='127.0.0.1', port=31337) -> None:
+        self.__protocol = protocol_handler()
+        self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.__socket.connect((host, port))
+        self.__fh = self.__socket.makefile('rwb')
+
+    def execute(self, *args):
+        self.__protocol.write_response(self.__fh, args)
+        resp = self.__protocol.handle_request(self.__fh)
+        if isinstance(resp, Error):
+            raise command_error(resp.message)
+        return resp
+    
+    def get(self, key):
+        return self.execute('GET', key)
+    
+    def set(self, key, value):
+        return self.execute('SET', key, value)
+    
+    def delete(self, key):
+        return self.execute('DELETE', key)
+    
+    def flush(self):
+        return self.execute('FLUSH')
+    
+    def mget(self, *keys):
+        return self.execute('MGET', *keys)
+    
+    def mset(self, *items):
+        return self. execute('MSET', *items)
+    
+
+if __name__=="__main__":
+    from gevent import monkey; monkey.patch_all()
+    server().run()
